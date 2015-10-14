@@ -6,6 +6,9 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
 
 public class HttpServer {
     private final int portNumber;
@@ -27,9 +30,9 @@ public class HttpServer {
                 System.out.println("Reading Request");
                 HttpRequestLine httpRequestLine = readRequest(in);
                 System.out.println("Process Request");
-                processRequest(httpRequestLine);
+                List<String> requestBody = processRequest(httpRequestLine);
                 System.out.println("Writing Response");
-                writeResponse(out);
+                writeResponse(out, requestBody);
             } catch (IOException e) {
                 System.out.println("Exception caught when trying to listen on port "
                         + portNumber + " or listening for a connection");
@@ -54,15 +57,18 @@ public class HttpServer {
         return httpRequestLine;
     }
 
-
-    private void processRequest(HttpRequestLine httpRequestLine) {
+    private List<String> processRequest(HttpRequestLine httpRequestLine) throws IOException {
         //TODO: Get the file requested from the URI
+        List<String> requestBody = Files.readAllLines(Paths.get(documentRoot + "triplebyte.html"));
+        return requestBody;
     }
 
-    public static void writeResponse(PrintWriter out) {
+    public static void writeResponse(PrintWriter out, List<String> requestBody) {
         out.println("HTTP/1.1 200 OK");
         out.println("Content-Type: text/html; charset=UTF-8");
         out.println("");
-        out.println("Hello World!");
+        for (String line : requestBody) {
+            out.println(line);
+        }
     }
 }
