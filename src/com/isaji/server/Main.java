@@ -13,17 +13,22 @@ public class Main {
         System.out.println("Starting Http Server on port " + args[0]);
         int portNumber = Integer.parseInt(args[0]);
 
-        try (
-                ServerSocket serverSocket = new ServerSocket(portNumber);
-                Socket clientSocket = serverSocket.accept();
-                PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-                BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))
-        ) {
-            readRequest(in);
-        } catch (IOException e) {
-            System.out.println("Exception caught when trying to listen on port "
-                    + portNumber + " or listening for a connection");
-            System.out.println(e.getMessage());
+        while (true) {
+            try (
+                    ServerSocket serverSocket = new ServerSocket(portNumber);
+                    Socket clientSocket = serverSocket.accept();
+                    PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+                    BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))
+            ) {
+                System.out.println("Reading Request");
+                readRequest(in);
+                System.out.println("Writing Response");
+                writeResponse(out);
+            } catch (IOException e) {
+                System.out.println("Exception caught when trying to listen on port "
+                        + portNumber + " or listening for a connection");
+                System.out.println(e.getMessage());
+            }
         }
     }
 
@@ -31,6 +36,16 @@ public class Main {
         String inputLine;
         while ((inputLine = in.readLine()) != null) {
             System.out.println(inputLine);
+            if (inputLine.equals("")) {
+                break;
+            }
         }
+    }
+
+    public static void writeResponse(PrintWriter out) {
+        out.println("HTTP/1.1 200 OK");
+        out.println("Content-Type: text/html; charset=UTF-8");
+        out.println("");
+        out.println("Hello World!");
     }
 }
