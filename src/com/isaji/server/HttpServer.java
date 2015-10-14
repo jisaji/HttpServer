@@ -7,6 +7,7 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 import java.util.List;
 
@@ -58,8 +59,23 @@ public class HttpServer {
     }
 
     private List<String> processRequest(HttpRequestLine httpRequestLine) throws IOException {
-        //TODO: Get the file requested from the URI
-        List<String> requestBody = Files.readAllLines(Paths.get(documentRoot + "triplebyte.html"));
+        String uri = httpRequestLine.getRequestURI();
+        if (uri.endsWith("/")) {
+            uri += "index.html";
+        }
+
+        List<String> requestBody;
+        try {
+            requestBody = Files.readAllLines(Paths.get(documentRoot + uri));
+        } catch (NoSuchFileException e) {
+            //TODO: Throw a 400
+            System.out.println(e);
+            throw e;
+        } catch (IOException e) {
+            //TODO: Throw a 500
+            System.out.println(e);
+            throw e;
+        }
         return requestBody;
     }
 
