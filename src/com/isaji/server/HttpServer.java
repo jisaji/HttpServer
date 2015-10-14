@@ -25,7 +25,9 @@ public class HttpServer {
                     BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))
             ) {
                 System.out.println("Reading Request");
-                readRequest(in);
+                HttpRequestLine httpRequestLine = readRequest(in);
+                System.out.println("Process Request");
+                processRequest(httpRequestLine);
                 System.out.println("Writing Response");
                 writeResponse(out);
             } catch (IOException e) {
@@ -36,14 +38,25 @@ public class HttpServer {
         }
     }
 
-    public void readRequest(BufferedReader in) throws IOException {
-        String inputLine;
+    public HttpRequestLine readRequest(BufferedReader in) throws IOException {
+        //Read Request-Line
+        String inputLine = in.readLine();
+        HttpRequestLine httpRequestLine = new HttpRequestLine(inputLine);
+
+        //Read Headers
         while ((inputLine = in.readLine()) != null) {
             System.out.println(inputLine);
             if (inputLine.equals("")) {
                 break;
             }
         }
+
+        return httpRequestLine;
+    }
+
+
+    private void processRequest(HttpRequestLine httpRequestLine) {
+        //TODO: Get the file requested from the URI
     }
 
     public static void writeResponse(PrintWriter out) {
