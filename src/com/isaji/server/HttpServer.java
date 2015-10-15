@@ -30,12 +30,14 @@ public class HttpServer {
             ) {
                 System.out.println("Reading Request");
                 HttpRequestLine httpRequestLine = readRequest(in);
+
                 System.out.println("Process Request");
                 HttpResponse httpResponse = processRequest(httpRequestLine);
+
                 System.out.println("Writing Response");
                 writeResponse(out, httpResponse);
             } catch (IOException e) {
-                System.out.println("Exception caught when trying to listen on port "
+                System.out.println("IOException caught when trying to listen on port "
                         + portNumber + " or listening for a connection");
                 System.out.println(e.getMessage());
             }
@@ -58,7 +60,7 @@ public class HttpServer {
         return httpRequestLine;
     }
 
-    private HttpResponse processRequest(HttpRequestLine httpRequestLine) throws IOException {
+    private HttpResponse processRequest(HttpRequestLine httpRequestLine) {
         String uri = httpRequestLine.getRequestURI();
         if (uri.endsWith("/")) {
             uri += "index.html";
