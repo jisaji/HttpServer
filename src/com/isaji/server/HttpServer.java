@@ -31,9 +31,9 @@ public class HttpServer {
                 System.out.println("Reading Request");
                 HttpRequestLine httpRequestLine = readRequest(in);
                 System.out.println("Process Request");
-                List<String> requestBody = processRequest(httpRequestLine);
+                HttpResponse httpResponse = processRequest(httpRequestLine);
                 System.out.println("Writing Response");
-                writeResponse(out, requestBody);
+                writeResponse(out, httpResponse);
             } catch (IOException e) {
                 System.out.println("Exception caught when trying to listen on port "
                         + portNumber + " or listening for a connection");
@@ -58,7 +58,7 @@ public class HttpServer {
         return httpRequestLine;
     }
 
-    private List<String> processRequest(HttpRequestLine httpRequestLine) throws IOException {
+    private HttpResponse processRequest(HttpRequestLine httpRequestLine) throws IOException {
         String uri = httpRequestLine.getRequestURI();
         if (uri.endsWith("/")) {
             uri += "index.html";
@@ -68,22 +68,25 @@ public class HttpServer {
         try {
             requestBody = Files.readAllLines(Paths.get(documentRoot + uri));
         } catch (NoSuchFileException e) {
-            //TODO: Throw a 400
-            System.out.println(e);
-            throw e;
+            return new HttpResponse(404);
         } catch (IOException e) {
-            //TODO: Throw a 500
-            System.out.println(e);
-            throw e;
+            return new HttpResponse(500);
         }
-        return requestBody;
+        HttpResponse httpResponse = new HttpResponse(200, requestBody);
+        httpResponse.getHeaders().add("Content-Type: text/html; charset=UTF-8");
+        return httpResponse;
     }
 
-    public static void writeResponse(PrintWriter out, List<String> requestBody) {
-        out.println("HTTP/1.1 200 OK");
-        out.println("Content-Type: text/html; charset=UTF-8");
+    public static void writeResponse(PrintWriter out, HttpResponse httpResponse) {
+        out.println(httpResponse.getStatusLine());
+
+        for (String header : httpResponse.getHeaders()) {
+            out.println(header);
+        }
+
         out.println("");
-        for (String line : requestBody) {
+
+        for (String line : httpResponse.getBody()) {
             out.println(line);
         }
     }
