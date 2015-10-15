@@ -79,15 +79,8 @@ public class HttpServer {
 
     public static void writeResponse(PrintWriter out, HttpResponse httpResponse) {
         out.println(httpResponse.getStatusLine());
-
-        for (String header : httpResponse.getHeaders()) {
-            out.println(header);
-        }
-
+        httpResponse.getHeaders().forEach(out::println);
         out.println("");
-
-        for (String line : httpResponse.getBody()) {
-            out.println(line);
-        }
+        httpResponse.getBody().forEach(out::println);
     }
 }
