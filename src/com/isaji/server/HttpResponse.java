@@ -6,13 +6,13 @@ import java.util.List;
 public class HttpResponse {
     private final int responseCode;
     private final List<String> headers;
-    private final List<String> body;
+    private final byte[] body;
 
     public HttpResponse(int responseCode) {
-        this(responseCode, new ArrayList<>());
+        this(responseCode, new byte[0]);
     }
 
-    public HttpResponse(int responseCode, List<String> body) {
+    public HttpResponse(int responseCode, byte[] body) {
         this.responseCode = responseCode;
         this.headers = new ArrayList<String>();
         this.body = body;
@@ -35,7 +35,7 @@ public class HttpResponse {
         return headers;
     }
 
-    public List<String> getBody() {
+    public byte[] getBody() {
         return body;
     }
 }

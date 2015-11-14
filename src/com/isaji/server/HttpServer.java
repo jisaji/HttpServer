@@ -1,9 +1,6 @@
 package com.isaji.server;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Files;
@@ -25,7 +22,7 @@ public class HttpServer {
             try (
                     ServerSocket serverSocket = new ServerSocket(portNumber);
                     Socket clientSocket = serverSocket.accept();
-                    PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+                    OutputStream out = clientSocket.getOutputStream();
                     BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))
             ) {
                 System.out.println("Reading Request");
@@ -66,23 +63,31 @@ public class HttpServer {
             uri += "index.html";
         }
 
-        List<String> requestBody;
+        byte[] requestBody;
         try {
-            requestBody = Files.readAllLines(Paths.get(documentRoot + uri));
+            requestBody = Files.readAllBytes(Paths.get(documentRoot + uri));
         } catch (NoSuchFileException e) {
             return new HttpResponse(404);
         } catch (IOException e) {
+            System.out.println(e);
             return new HttpResponse(500);
         }
         HttpResponse httpResponse = new HttpResponse(200, requestBody);
-        httpResponse.getHeaders().add("Content-Type: text/html; charset=UTF-8");
+
+        httpResponse.getHeaders().add("Content-Type: image/jpeg");
+
+        int contentLength = requestBody.length;
+
+        httpResponse.getHeaders().add("Content-Length: " + contentLength);
         return httpResponse;
     }
 
-    public static void writeResponse(PrintWriter out, HttpResponse httpResponse) {
-        out.println(httpResponse.getStatusLine());
-        httpResponse.getHeaders().forEach(out::println);
-        out.println("");
-        httpResponse.getBody().forEach(out::println);
+    public static void writeResponse(OutputStream out, HttpResponse httpResponse) throws IOException {
+        out.write((httpResponse.getStatusLine() + "\r\n").getBytes());
+        for (String headers : httpResponse.getHeaders()) {
+            out.write((headers + "\r\n").getBytes());
+        }
+        out.write("\r\n".getBytes());
+        out.write(httpResponse.getBody());
     }
 }
