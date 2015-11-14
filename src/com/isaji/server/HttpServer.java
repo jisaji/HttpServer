@@ -78,12 +78,8 @@ public class HttpServer {
             return new HttpResponse(500);
         }
         HttpResponse httpResponse = new HttpResponse(200, requestBody);
-
-        httpResponse.getHeaders().add("Content-Type: image/jpeg");
-
-        int contentLength = requestBody.length;
-
-        httpResponse.getHeaders().add("Content-Length: " + contentLength);
+        httpResponse.getHeaders().add(getContentType(uri));
+        httpResponse.getHeaders().add("Content-Length: " + requestBody.length);
         return httpResponse;
     }
 
@@ -94,5 +90,12 @@ public class HttpServer {
         }
         out.write("\r\n".getBytes());
         out.write(httpResponse.getBody());
+    }
+
+    private String getContentType(String uri) {
+        if (uri.endsWith(".jpg") || uri.endsWith(".jpeg")) {
+            return "Content-Type: image/jpeg";
+        }
+        return "Content-Type: text/html";
     }
 }
