@@ -18,27 +18,32 @@ public class HttpServer {
     }
 
     public void run() {
-        while (true) {
-            try (
-                    ServerSocket serverSocket = new ServerSocket(portNumber);
-                    Socket clientSocket = serverSocket.accept();
-                    OutputStream out = clientSocket.getOutputStream();
-                    BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))
-            ) {
-                System.out.println("Reading Request");
-                HttpRequestLine httpRequestLine = readRequest(in);
+        try (ServerSocket serverSocket = new ServerSocket(portNumber)) {
+            while (true) {
+                try (
+                        Socket clientSocket = serverSocket.accept();
+                        OutputStream out = clientSocket.getOutputStream();
+                        BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))
+                ) {
+                    System.out.println("Reading Request");
+                    HttpRequestLine httpRequestLine = readRequest(in);
 
-                System.out.println("Process Request");
-                HttpResponse httpResponse = processRequest(httpRequestLine);
+                    System.out.println("Process Request");
+                    HttpResponse httpResponse = processRequest(httpRequestLine);
 
-                System.out.println("Writing Response");
-                writeResponse(out, httpResponse);
-            } catch (IOException e) {
-                System.out.println("IOException caught when trying to listen on port "
-                        + portNumber + " or listening for a connection");
-                System.out.println(e.getMessage());
+                    System.out.println("Writing Response");
+                    writeResponse(out, httpResponse);
+                } catch (IOException e) {
+                    System.out.println("IOException caught when listening for a connection");
+                    System.out.println(e.getMessage());
+                }
             }
+        } catch (IOException e) {
+            System.out.println("IOException caught when trying to listen on port "
+                    + portNumber);
+            System.out.println(e.getMessage());
         }
+
     }
 
     public HttpRequestLine readRequest(BufferedReader in) throws IOException {
