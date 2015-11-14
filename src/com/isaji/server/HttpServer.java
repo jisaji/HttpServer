@@ -1,20 +1,25 @@
 package com.isaji.server;
 
+import org.apache.commons.io.IOUtils;
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
 public class HttpServer {
     private final int portNumber;
     private final String documentRoot;
+    private final String cgibinDirectory;
 
-    public HttpServer(int portNumber, String documentRoot) {
+    public HttpServer(int portNumber, String documentRoot, String cgibinDirectory) {
         this.portNumber = portNumber;
         this.documentRoot = documentRoot;
+        this.cgibinDirectory = cgibinDirectory;
     }
 
     public void run() {
@@ -68,14 +73,31 @@ public class HttpServer {
             uri += "index.html";
         }
 
-        byte[] requestBody;
-        try {
-            requestBody = Files.readAllBytes(Paths.get(documentRoot + uri));
-        } catch (NoSuchFileException e) {
+        Path fullPath = Paths.get(documentRoot + uri);
+        if (!Files.exists(fullPath)) {
             return new HttpResponse(404);
-        } catch (IOException e) {
-            System.out.println(e);
-            return new HttpResponse(500);
+        }
+
+        byte[] requestBody;
+        if (uri.startsWith(cgibinDirectory)) {
+            try {
+                Process process = Runtime.getRuntime().exec(fullPath.toString());
+                process.waitFor();
+                requestBody = IOUtils.toByteArray(process.getInputStream());
+            } catch (IOException e) {
+                System.out.println(e);
+                return new HttpResponse(500);
+            } catch (InterruptedException e) {
+                System.out.println(e);
+                return new HttpResponse(500);
+            }
+        } else {
+            try {
+                requestBody = Files.readAllBytes(Paths.get(documentRoot + uri));
+            } catch (IOException e) {
+                System.out.println(e);
+                return new HttpResponse(500);
+            }
         }
         HttpResponse httpResponse = new HttpResponse(200, requestBody);
         httpResponse.getHeaders().add(getContentType(uri));
