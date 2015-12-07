@@ -124,6 +124,8 @@ public class HttpServer {
             return "Content-Type: image/png";
         } else if (uri.endsWith(".css")) {
             return "Content-Type: text/css";
+        } else if (uri.endsWith(".js")) {
+            return "Content-Type: application/javascript";
         }
         return "Content-Type: text/html";
     }
