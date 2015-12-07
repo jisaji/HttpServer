@@ -118,6 +118,12 @@ public class HttpServer {
     private String getContentType(String uri) {
         if (uri.endsWith(".jpg") || uri.endsWith(".jpeg")) {
             return "Content-Type: image/jpeg";
+        } else if (uri.endsWith(".gif")) {
+            return "Content-Type: image/gif";
+        } else if (uri.endsWith(".png")) {
+            return "Content-Type: image/png";
+        } else if (uri.endsWith(".css")) {
+            return "Content-Type: text/css";
         }
         return "Content-Type: text/html";
     }
