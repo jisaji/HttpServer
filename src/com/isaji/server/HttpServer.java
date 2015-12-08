@@ -106,30 +106,9 @@ public class HttpServer {
         if (uri.startsWith(cgibinDirectory)) {
             try {
                 if (httpRequest.getHttpRequestLine().getMethod().toUpperCase().equals("GET")) {
-                    Process process = null;
-                    if (queryString == null) {
-                        process = new ProcessBuilder(fullPath.toString()).start();
-                    } else {
-                        ProcessBuilder processBuilder = new ProcessBuilder(fullPath.toString());
-                        Map<String, String> env = processBuilder.environment();
-                        env.put("QUERY_STRING", queryString);
-                        env.put("REQUEST_METHOD", "GET");
-                        process = processBuilder.start();
-                    }
-                    process.waitFor();
-                    requestBody = IOUtils.toByteArray(process.getInputStream());
+                    requestBody = getResponseBodyForGET(queryString, fullPath.toString());
                 } else if (httpRequest.getHttpRequestLine().getMethod().toUpperCase().equals("POST")) {
-                    Process process = null;
-                    ProcessBuilder processBuilder = new ProcessBuilder(fullPath.toString());
-                    Map<String, String> env = processBuilder.environment();
-                    env.put("REQUEST_METHOD", "POST");
-                    env.put("CONTENT_LENGTH", httpRequest.getHeaders().get("Content-Length"));
-                    env.put("CONTENT_TYPE", httpRequest.getHeaders().get("Content-Type"));
-                    process = processBuilder.start();
-                    process.getOutputStream().write(httpRequest.getBody());
-                    process.getOutputStream().close();
-                    process.waitFor();
-                    requestBody = IOUtils.toByteArray(process.getInputStream());
+                    requestBody = getResponseBodyForPOST(fullPath.toString(), httpRequest);
                 }
             } catch (IOException e) {
                 System.out.println(e);
@@ -159,6 +138,35 @@ public class HttpServer {
         }
         out.write("\r\n".getBytes());
         out.write(httpResponse.getBody());
+    }
+
+    private byte[] getResponseBodyForGET(String queryString, String fullPath) throws InterruptedException, IOException {
+        Process process = null;
+        if (queryString == null) {
+            process = new ProcessBuilder(fullPath).start();
+        } else {
+            ProcessBuilder processBuilder = new ProcessBuilder(fullPath);
+            Map<String, String> env = processBuilder.environment();
+            env.put("QUERY_STRING", queryString);
+            env.put("REQUEST_METHOD", "GET");
+            process = processBuilder.start();
+        }
+        process.waitFor();
+        return IOUtils.toByteArray(process.getInputStream());
+    }
+
+    private byte[] getResponseBodyForPOST(String fullPath, HttpRequest httpRequest) throws IOException, InterruptedException {
+        Process process = null;
+        ProcessBuilder processBuilder = new ProcessBuilder(fullPath);
+        Map<String, String> env = processBuilder.environment();
+        env.put("REQUEST_METHOD", "POST");
+        env.put("CONTENT_LENGTH", httpRequest.getHeaders().get("Content-Length"));
+        env.put("CONTENT_TYPE", httpRequest.getHeaders().get("Content-Type"));
+        process = processBuilder.start();
+        process.getOutputStream().write(httpRequest.getBody());
+        process.getOutputStream().close();
+        process.waitFor();
+        return IOUtils.toByteArray(process.getInputStream());
     }
 
     private String getContentType(String uri) {
