@@ -11,6 +11,7 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 
 public class HttpServer {
     private final int portNumber;
@@ -70,6 +71,14 @@ public class HttpServer {
 
     private HttpResponse processRequest(HttpRequestLine httpRequestLine) {
         String uri = httpRequestLine.getRequestURI();
+
+        String queryString = null;
+        if (uri.indexOf('?') >= 0) {
+            queryString = uri.substring(uri.indexOf('?') + 1);
+            System.out.println(queryString);
+            uri = uri.substring(0, uri.indexOf('?'));
+        }
+
         if (uri.endsWith("/")) {
             uri += "index.html";
         }
@@ -82,7 +91,15 @@ public class HttpServer {
         byte[] requestBody;
         if (uri.startsWith(cgibinDirectory)) {
             try {
-                Process process = Runtime.getRuntime().exec(fullPath.toString());
+                Process process = null;
+                if (queryString == null) {
+                    process = new ProcessBuilder(fullPath.toString()).start();
+                } else {
+                    ProcessBuilder processBuilder = new ProcessBuilder(fullPath.toString());
+                    Map<String, String> env = processBuilder.environment();
+                    env.put("QUERY_STRING", queryString);
+                    process = processBuilder.start();
+                }
                 process.waitFor();
                 requestBody = IOUtils.toByteArray(process.getInputStream());
             } catch (IOException e) {
