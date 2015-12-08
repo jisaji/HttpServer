@@ -72,17 +72,15 @@ public class HttpServer {
         }
 
         Map<String, String> headerMap = buildHeaderMap(headers);
-        String bodyString = null;
+        byte[] body = null;
         if (headerMap.containsKey("Content-Length")) {
             int contentLength = Integer.parseInt(headerMap.get("Content-Length"));
-            char[] body = new char[contentLength];
+            body = new byte[contentLength];
             for (int i = 0; i < contentLength; i++) {
-                body[i] = (char) in.read();
+                body[i] = (byte)in.read();
             }
-            bodyString = new String(body);
-            System.out.println(bodyString);
         }
-        return new HttpRequest(httpRequestLine, headerMap, bodyString);
+        return new HttpRequest(httpRequestLine, headerMap, body);
     }
 
     private HttpResponse processRequest(HttpRequest httpRequest) {
@@ -128,7 +126,7 @@ public class HttpServer {
                     env.put("CONTENT_LENGTH", httpRequest.getHeaders().get("Content-Length"));
                     env.put("CONTENT_TYPE", httpRequest.getHeaders().get("Content-Type"));
                     process = processBuilder.start();
-                    process.getOutputStream().write(httpRequest.getBody().getBytes());
+                    process.getOutputStream().write(httpRequest.getBody());
                     process.getOutputStream().close();
                     process.waitFor();
                     requestBody = IOUtils.toByteArray(process.getInputStream());

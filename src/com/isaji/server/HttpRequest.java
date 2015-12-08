@@ -6,9 +6,9 @@ import java.util.Map;
 public class HttpRequest {
     private final HttpRequestLine httpRequestLine;
     private final Map<String, String> headers;
-    private final String body;
+    private final byte[] body;
 
-    public HttpRequest(HttpRequestLine httpRequestLine, Map<String, String> headers, String body) {
+    public HttpRequest(HttpRequestLine httpRequestLine, Map<String, String> headers, byte[] body) {
         this.httpRequestLine = httpRequestLine;
         this.headers = headers;
         this.body = body;
@@ -22,7 +22,7 @@ public class HttpRequest {
         return headers;
     }
 
-    public String getBody() {
+    public byte[] getBody() {
         return body;
     }
 }
