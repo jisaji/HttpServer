@@ -1,13 +1,14 @@
 package com.isaji.server;
 
 import java.util.List;
+import java.util.Map;
 
 public class HttpRequest {
     private final HttpRequestLine httpRequestLine;
-    private final List<String> headers;
-    private final byte[] body;
+    private final Map<String, String> headers;
+    private final String body;
 
-    public HttpRequest(HttpRequestLine httpRequestLine, List<String> headers, byte[] body) {
+    public HttpRequest(HttpRequestLine httpRequestLine, Map<String, String> headers, String body) {
         this.httpRequestLine = httpRequestLine;
         this.headers = headers;
         this.body = body;
@@ -17,11 +18,11 @@ public class HttpRequest {
         return httpRequestLine;
     }
 
-    public List<String> getHeaders() {
+    public Map<String, String> getHeaders() {
         return headers;
     }
 
-    public byte[] getBody() {
+    public String getBody() {
         return body;
     }
 }

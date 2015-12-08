@@ -11,6 +11,9 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class HttpServer {
@@ -33,10 +36,10 @@ public class HttpServer {
                         BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))
                 ) {
                     System.out.println("Reading Request");
-                    HttpRequestLine httpRequestLine = readRequest(in);
+                    HttpRequest httpRequest = readRequest(in);
 
                     System.out.println("Process Request");
-                    HttpResponse httpResponse = processRequest(httpRequestLine);
+                    HttpResponse httpResponse = processRequest(httpRequest);
 
                     System.out.println("Writing Response");
                     writeResponse(out, httpResponse);
@@ -53,24 +56,37 @@ public class HttpServer {
 
     }
 
-    public HttpRequestLine readRequest(BufferedReader in) throws IOException {
+    public HttpRequest readRequest(BufferedReader in) throws IOException {
         //Read Request-Line
         String inputLine = in.readLine();
         HttpRequestLine httpRequestLine = new HttpRequestLine(inputLine);
 
+        List<String> headers = new ArrayList<>();
         //Read Headers
         while ((inputLine = in.readLine()) != null) {
             System.out.println(inputLine);
             if (inputLine.equals("")) {
                 break;
             }
+            headers.add(inputLine);
         }
 
-        return httpRequestLine;
+        Map<String, String> headerMap = buildHeaderMap(headers);
+        String bodyString = null;
+        if (headerMap.containsKey("Content-Length")) {
+            int contentLength = Integer.parseInt(headerMap.get("Content-Length"));
+            char[] body = new char[contentLength];
+            for (int i = 0; i < contentLength; i++) {
+                body[i] = (char) in.read();
+            }
+            bodyString = new String(body);
+            System.out.println(bodyString);
+        }
+        return new HttpRequest(httpRequestLine, headerMap, bodyString);
     }
 
-    private HttpResponse processRequest(HttpRequestLine httpRequestLine) {
-        String uri = httpRequestLine.getRequestURI();
+    private HttpResponse processRequest(HttpRequest httpRequest) {
+        String uri = httpRequest.getHttpRequestLine().getRequestURI();
 
         String queryString = null;
         if (uri.indexOf('?') >= 0) {
@@ -88,20 +104,35 @@ public class HttpServer {
             return new HttpResponse(404);
         }
 
-        byte[] requestBody;
+        byte[] requestBody = null;
         if (uri.startsWith(cgibinDirectory)) {
             try {
-                Process process = null;
-                if (queryString == null) {
-                    process = new ProcessBuilder(fullPath.toString()).start();
-                } else {
+                if (httpRequest.getHttpRequestLine().getMethod().toUpperCase().equals("GET")) {
+                    Process process = null;
+                    if (queryString == null) {
+                        process = new ProcessBuilder(fullPath.toString()).start();
+                    } else {
+                        ProcessBuilder processBuilder = new ProcessBuilder(fullPath.toString());
+                        Map<String, String> env = processBuilder.environment();
+                        env.put("QUERY_STRING", queryString);
+                        env.put("REQUEST_METHOD", "GET");
+                        process = processBuilder.start();
+                    }
+                    process.waitFor();
+                    requestBody = IOUtils.toByteArray(process.getInputStream());
+                } else if (httpRequest.getHttpRequestLine().getMethod().toUpperCase().equals("POST")) {
+                    Process process = null;
                     ProcessBuilder processBuilder = new ProcessBuilder(fullPath.toString());
                     Map<String, String> env = processBuilder.environment();
-                    env.put("QUERY_STRING", queryString);
+                    env.put("REQUEST_METHOD", "POST");
+                    env.put("CONTENT_LENGTH", httpRequest.getHeaders().get("Content-Length"));
+                    env.put("CONTENT_TYPE", httpRequest.getHeaders().get("Content-Type"));
                     process = processBuilder.start();
+                    process.getOutputStream().write(httpRequest.getBody().getBytes());
+                    process.getOutputStream().close();
+                    process.waitFor();
+                    requestBody = IOUtils.toByteArray(process.getInputStream());
                 }
-                process.waitFor();
-                requestBody = IOUtils.toByteArray(process.getInputStream());
             } catch (IOException e) {
                 System.out.println(e);
                 return new HttpResponse(500);
@@ -145,5 +176,16 @@ public class HttpServer {
             return "Content-Type: application/javascript";
         }
         return "Content-Type: text/html";
+    }
+
+    private Map<String, String> buildHeaderMap(List<String> headers) {
+        Map<String, String> headerMap = new HashMap<>();
+        for (String header : headers) {
+            System.out.println(header);
+            String key = header.substring(0, header.indexOf(':'));
+            String value = header.substring(header.indexOf(':') + 1);
+            headerMap.put(key, value.trim());
+        }
+        return headerMap;
     }
 }
